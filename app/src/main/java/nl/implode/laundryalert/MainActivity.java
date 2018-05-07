@@ -1,6 +1,9 @@
 package nl.implode.laundryalert;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -21,6 +25,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
+    private PendingIntent pendingIntent;
 
     Handler handler = new Handler() {
         @Override
@@ -32,12 +37,36 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    public void start() {
+        AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        int interval = 8000;
+        // INTERVAL_FIFTEEN_MINUTES
+
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), interval, pendingIntent);
+        //Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
+        Log.d("Laundry", "Alarm set");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        /* Retrieve a PendingIntent that will perform a broadcast */
+        Intent alarmIntent = new Intent(MainActivity.this, LaundryReceiver.class);
+        pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, alarmIntent, 0);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        Button startService = (Button) findViewById(R.id.startService);
+        final Context context = getApplicationContext();
+        startService.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                start();
+            }
+        });
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
