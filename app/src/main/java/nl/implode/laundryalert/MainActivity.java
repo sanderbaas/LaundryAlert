@@ -27,7 +27,7 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity {
     private PendingIntent pendingIntent;
 
-    Handler handler = new Handler() {
+    /*Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             Bundle bundle = msg.getData();
@@ -35,16 +35,13 @@ public class MainActivity extends AppCompatActivity {
             Log.d("callback", text);
             Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
         }
-    };
+    };*/
 
     public void start() {
         AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        int interval = 8000;
-        // INTERVAL_FIFTEEN_MINUTES
+        Long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
 
         manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), interval, pendingIntent);
-        //Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
-        Log.d("Laundry", "Alarm set");
     }
 
     @Override
@@ -53,11 +50,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         /* Retrieve a PendingIntent that will perform a broadcast */
-        Intent alarmIntent = new Intent(MainActivity.this, LaundryReceiver.class);
+        /*Intent alarmIntent = new Intent(MainActivity.this, LaundryReceiver.class);
         pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, alarmIntent, 0);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setSupportActionBar(toolbar);*/
 
         Button startService = (Button) findViewById(R.id.startService);
         final Context context = getApplicationContext();
@@ -69,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        /*FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
@@ -88,6 +85,6 @@ public class MainActivity extends AppCompatActivity {
                 Thread thread = new Thread(runnable);
                 thread.start();
             }
-        });
+        });*/
     }
 }
