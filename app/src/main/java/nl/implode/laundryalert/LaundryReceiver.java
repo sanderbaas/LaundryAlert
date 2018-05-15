@@ -6,9 +6,11 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
@@ -30,8 +32,10 @@ public class LaundryReceiver extends BroadcastReceiver {
     public static final String CHANNEL_ID = "nl.implode.laundryalert";
     public static final String CHANNEL_NAME = "Laundry Alert Channel";
     public static final String CHANNEL_DESCRIPTION = "Keep in touch with the laundry machine.";
+
     @Override
     public void onReceive(Context context, Intent intent) {
+        Log.d("LaundryReceiver", "Running");
         // This method is called when the BroadcastReceiver is receiving
         // an Intent broadcast.
         if (intent.getAction() != null && intent.getAction() == "nl.implode.laundryalert.ACTION_DISMISS") {
@@ -49,7 +53,9 @@ public class LaundryReceiver extends BroadcastReceiver {
     }
 
     public void dismissAlert(Context context, Integer messageId, Long timestampStart) {
-        postHandler(timestampStart, "Sander");
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        String handlerName = sharedPref.getString("handler_name", "");
+        postHandler(timestampStart, handlerName);
 
         //remove notification
         NotificationManager notificationManager= (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

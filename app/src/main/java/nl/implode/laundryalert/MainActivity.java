@@ -4,10 +4,12 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -26,6 +28,7 @@ import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
     private PendingIntent pendingIntent;
+    //private PendingIntent alarmIntent;
 
     /*Handler handler = new Handler() {
         @Override
@@ -38,10 +41,30 @@ public class MainActivity extends AppCompatActivity {
     };*/
 
     public void start() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
         AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
 
-        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), interval, pendingIntent);
+        Long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+        String syncInterval = sharedPref.getString("sync_frequency", "");
+        if (!syncInterval.isEmpty()) {
+            interval = Long.parseLong(syncInterval) * 60000L;
+        }
+        interval = 8000L;
+        Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), interval, alarmIntent);
+    }
+
+    public void stop() {
+        AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+        // If the alarm has been set, cancel it.
+        if (manager!= null) {
+            manager.cancel(alarmIntent);
+        }
     }
 
     @Override
@@ -62,6 +85,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 start();
+            }
+        });
+
+        Button stopService = (Button) findViewById(R.id.stopService);
+        stopService.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                stop();
+            }
+        });
+
+        Button settings = (Button) findViewById(R.id.settings);
+        settings.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
+                MainActivity.this.startActivity(settingsIntent);
             }
         });
 
