@@ -37,4 +37,14 @@
         app:layout_constraintTop_toBottomOf="@+id/startService"
         app:layout_constraintStart_toStartOf="@+id/startService"
         tools:layout_editor_absoluteX="46dp" />
+
+    <Button
+        android:id="@+id/discover"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Discover"
+        app:layout_constraintTop_toBottomOf="@+id/stopService"
+        app:layout_constraintStart_toEndOf="@+id/settings"
+        tools:layout_editor_absoluteX="46dp" />
 </android.support.constraint.ConstraintLayout>
