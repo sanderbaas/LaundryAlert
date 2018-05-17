@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 
 import android.util.Log;
@@ -58,36 +59,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static InetAddress intToInetAddress(int hostAddress) {
-        if (hostAddress == 0)
-            return null;
-
-        byte[] addressBytes = { (byte)(0xff & hostAddress),
-                (byte)(0xff & (hostAddress >> 8)),
-                (byte)(0xff & (hostAddress >> 16)),
-                (byte)(0xff & (hostAddress >> 24)) };
-
-        try {
-            return InetAddress.getByAddress(addressBytes);
-        } catch (UnknownHostException e) {
-            throw new AssertionError();
-        }
-    }
-
-    public void noHostFound() {
-        Log.d("Laundry", "no host found");
-    }
-
-    public void foundHosts(final ServiceInfo[] serviceInfos) {
-        for (Integer i = 0; i < serviceInfos.length; i++ ) {
-            String name = serviceInfos[i].getName();
-            Integer port = serviceInfos[i].getPort();
-            String host = serviceInfos[i].getServer();
-            Log.d("Found host", name + ": " + host + ":" + port.toString());
-        }
-    }
-
-    private static class NetworkServiceListener implements ServiceListener {
+    private ServiceListener serviceListener = new ServiceListener(){
         @Override
         public void serviceAdded(ServiceEvent event) {
             System.out.println("Service added: " + event.getInfo());
@@ -102,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         public void serviceResolved(ServiceEvent event) {
             System.out.println("Service resolved: " + event.getInfo());
         }
-    }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,8 +98,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button settings = (Button) findViewById(R.id.settings);
-        settings.setOnClickListener(new View.OnClickListener(){
+        //Button settings = (Button) findViewById(R.id.settings);
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
                 Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
@@ -140,31 +113,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d("Laundry", "click discover");
-
-                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-                StrictMode.setThreadPolicy(policy);
-
-                WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-                WifiManager.MulticastLock multicastLock = null;
-                try {
-                    // Get wifi ip address
-                    int wifiIpAddress = wifiManager.getConnectionInfo().getIpAddress();
-                    InetAddress wifiInetAddress = intToInetAddress(wifiIpAddress);
-
-                    // Acquire multicast lock
-                    multicastLock = wifiManager.createMulticastLock("laundryalert.multicastlock");
-                    multicastLock.setReferenceCounted(true);
-                    multicastLock.acquire();
-
-                    JmDNS jmDns = JmDNS.create(wifiInetAddress);
-                    jmDns.addServiceListener("_http._tcp.local.", new NetworkServiceListener());
-                } catch (Exception e) {
-                    Log.e("Laundry", e.getMessage());
-                } finally {
-                    if (multicastLock != null)
-                        multicastLock.release();
-                }
+                //BrowserListener browserListener = new BrowserListener();
+                ServiceBrowser serviceBrowser = new ServiceBrowser(context, serviceListener);
             }
         });
 
