@@ -14,7 +14,6 @@ import javax.jmdns.ServiceListener;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 
-import android.os.Handler;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 
@@ -24,27 +23,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 
 public class MainActivity extends AppCompatActivity {
     private PendingIntent pendingIntent;
-    //private static final String MDNS_LAUNDRY_SERVICENAME = "laundry._http._tcp.local.";
-    //private static final String MDNS_LAUNDRY_SERVICENAME = "_http._tcp.local";
-    //private static final int DISCOVERY_TIMEOUT = 5000;
-    //private PendingIntent alarmIntent;
-
-    /*Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            Bundle bundle = msg.getData();
-            String text = bundle.getString("result");
-            Log.d("callback", text);
-            Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
-        }
-    };*/
 
     public void start() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
@@ -55,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         if (!syncInterval.isEmpty()) {
             interval = Long.parseLong(syncInterval) * 60000L;
         }
-        interval = 8000L;
+
         Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
 
@@ -67,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+
         // If the alarm has been set, cancel it.
         if (manager!= null) {
             manager.cancel(alarmIntent);
@@ -124,13 +109,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /* Retrieve a PendingIntent that will perform a broadcast */
-        /*Intent alarmIntent = new Intent(MainActivity.this, LaundryReceiver.class);
-        pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, alarmIntent, 0);
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);*/
-
         Button startService = (Button) findViewById(R.id.startService);
         final Context context = getApplicationContext();
         startService.setOnClickListener(new View.OnClickListener(){
@@ -162,38 +140,31 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d("Laundry", "click discover");
-                /*final Thread searchThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {*/
-                        Log.d("Laundry", "searchThread running");
+
                 StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
                 StrictMode.setThreadPolicy(policy);
 
-                        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-                        WifiManager.MulticastLock multicastLock = null;
-                        try {
-                            // Get wifi ip address
-                            int wifiIpAddress = wifiManager.getConnectionInfo().getIpAddress();
-                            InetAddress wifiInetAddress = intToInetAddress(wifiIpAddress);
+                WifiManager.MulticastLock multicastLock = null;
+                try {
+                    // Get wifi ip address
+                    int wifiIpAddress = wifiManager.getConnectionInfo().getIpAddress();
+                    InetAddress wifiInetAddress = intToInetAddress(wifiIpAddress);
 
-                            // Acquire multicast lock
-                            multicastLock = wifiManager.createMulticastLock("laundryalert.multicastlock");
-                            multicastLock.setReferenceCounted(true);
-                            multicastLock.acquire();
+                    // Acquire multicast lock
+                    multicastLock = wifiManager.createMulticastLock("laundryalert.multicastlock");
+                    multicastLock.setReferenceCounted(true);
+                    multicastLock.acquire();
 
-                            JmDNS jmDns = JmDNS.create(wifiInetAddress);
-                            jmDns.addServiceListener("_http._tcp.local.", new NetworkServiceListener());
-                        } catch (Exception e) {
-                            Log.d("Laundry", "Got an IO Exception", e);
-                        } finally {
-                            if (multicastLock != null)
-                                multicastLock.release();
-                        }
-                    //}
-                //});
-
-                //searchThread.start();
+                    JmDNS jmDns = JmDNS.create(wifiInetAddress);
+                    jmDns.addServiceListener("_http._tcp.local.", new NetworkServiceListener());
+                } catch (Exception e) {
+                    Log.e("Laundry", e.getMessage());
+                } finally {
+                    if (multicastLock != null)
+                        multicastLock.release();
+                }
             }
         });
 
