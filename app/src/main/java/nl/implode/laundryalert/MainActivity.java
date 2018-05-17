@@ -15,6 +15,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 
 import android.os.Handler;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 
 import android.support.v7.app.AppCompatActivity;
@@ -101,6 +102,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private static class NetworkServiceListener implements ServiceListener {
+        @Override
+        public void serviceAdded(ServiceEvent event) {
+            System.out.println("Service added: " + event.getInfo());
+        }
+
+        @Override
+        public void serviceRemoved(ServiceEvent event) {
+            System.out.println("Service removed: " + event.getInfo());
+        }
+
+        @Override
+        public void serviceResolved(ServiceEvent event) {
+            System.out.println("Service resolved: " + event.getInfo());
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -139,49 +157,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        /*class SampleListener implements ServiceListener {
-            @Override
-            public void serviceAdded(ServiceEvent event) {
-                System.out.println("Service added: " + event.getInfo());
-            }
-
-            @Override
-            public void serviceRemoved(ServiceEvent event) {
-                System.out.println("Service removed: " + event.getInfo());
-            }
-
-            @Override
-            public void serviceResolved(ServiceEvent event) {
-                System.out.println("Service resolved: " + event.getInfo());
-            }
-        }*/
-
         Button discover = (Button) findViewById(R.id.discover);
         discover.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
                 Log.d("Laundry", "click discover");
-
-                /*try {
-                    // Create a JmDNS instance
-                    WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-                    WifiManager.MulticastLock multicastLock = null;
-                    int wifiIpAddress = wifiManager.getConnectionInfo().getIpAddress();
-                    InetAddress wifiInetAddress = intToInetAddress(wifiIpAddress);
-                    JmDNS jmdns = JmDNS.create(wifiInetAddress);
-
-                    // Add a service listener
-                    jmdns.addServiceListener("_xbmc-jsonrpc-h._tcp.local.", new SampleListener());
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
-                }*/
-
-                final Handler handler = new Handler();
-                final Thread searchThread = new Thread(new Runnable() {
+                /*final Thread searchThread = new Thread(new Runnable() {
                     @Override
-                    public void run() {
+                    public void run() {*/
                         Log.d("Laundry", "searchThread running");
+                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+                StrictMode.setThreadPolicy(policy);
+
                         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
                         WifiManager.MulticastLock multicastLock = null;
@@ -195,52 +182,18 @@ public class MainActivity extends AppCompatActivity {
                             multicastLock.setReferenceCounted(true);
                             multicastLock.acquire();
 
-                            /*JmDNS jmDns = (wifiInetAddress != null)?
-                                    JmDNS.create(wifiInetAddress) :
-                                    JmDNS.create();*/
-                            //JmDNS jmDns = JmDNS.create(wifiInetAddress);
                             JmDNS jmDns = JmDNS.create(wifiInetAddress);
-
-                            ServiceInfo serviceInfo = ServiceInfo.create("http", "example", 1234, "path=index.html");
-                            jmDns.registerService(serviceInfo);
-                            //_laundry._http._tcp.local._http._tcp.local
-                            // Get the json rpc service list
-                            final ServiceInfo[] serviceInfos =
-                                    jmDns.list("laundry._http._tcp.local.", 10000);
-
-                            Log.d("Laundry", String.valueOf(serviceInfos.length));
-
-                            //synchronized (lock) {
-                            //    // If the user didn't cancel the search, and we are sill in the activity
-                            //    if (!searchCancelled && isAdded()) {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Log.d("Laundry", "running handler");
-                                            if ((serviceInfos == null) || (serviceInfos.length == 0)) {
-                                                Log.d("Laundry", "no hosts found");
-                                                noHostFound();
-                                            } else {
-                                                Log.d("Laundry", "found hosts");
-                                                foundHosts(serviceInfos);
-                                            }
-                                        }
-                                    });
-                            //    }
-                            //}
-                        } catch (IOException e) {
+                            jmDns.addServiceListener("_http._tcp.local.", new NetworkServiceListener());
+                        } catch (Exception e) {
                             Log.d("Laundry", "Got an IO Exception", e);
                         } finally {
                             if (multicastLock != null)
                                 multicastLock.release();
                         }
-                    }
-                });
+                    //}
+                //});
 
-                searchThread.start();
-
-                //Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
-                //MainActivity.this.startActivity(settingsIntent);
+                //searchThread.start();
             }
         });
 
