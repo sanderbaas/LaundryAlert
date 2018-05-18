@@ -6,15 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
-import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceEvent;
-import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
 
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 
-import android.os.StrictMode;
 import android.preference.PreferenceManager;
 
 import android.support.design.widget.FloatingActionButton;
@@ -23,9 +19,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -62,17 +55,17 @@ public class MainActivity extends AppCompatActivity {
     private ServiceListener serviceListener = new ServiceListener(){
         @Override
         public void serviceAdded(ServiceEvent event) {
-            System.out.println("Service added: " + event.getInfo());
+            Log.d("Laundry", "Service added: " + event.getInfo());
         }
 
         @Override
         public void serviceRemoved(ServiceEvent event) {
-            System.out.println("Service removed: " + event.getInfo());
+            Log.d("Laundry", "Service removed: " + event.getInfo());
         }
 
         @Override
         public void serviceResolved(ServiceEvent event) {
-            System.out.println("Service resolved: " + event.getInfo());
+            Log.d("Laundry", "Service resolved: " + event.getInfo());
         }
     };
 
@@ -98,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //Button settings = (Button) findViewById(R.id.settings);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -112,32 +104,9 @@ public class MainActivity extends AppCompatActivity {
         discover.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                Log.d("Laundry", "click discover");
-                //BrowserListener browserListener = new BrowserListener();
+                Log.d("Laundry", "start discovery");
                 ServiceBrowser serviceBrowser = new ServiceBrowser(context, serviceListener);
             }
         });
-
-
-        /*FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(final View view) {
-                Runnable runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        Message msg = handler.obtainMessage();
-                        Bundle bundle = new Bundle();
-                        String result = MulticastHelper.receiveMessage(MainActivity.this);
-                        Log.d("multicast",result);
-                        bundle.putString("result", result);
-                        msg.setData(bundle);
-                        handler.sendMessage(msg);
-                    }
-                };
-                Thread thread = new Thread(runnable);
-                thread.start();
-            }
-        });*/
     }
 }

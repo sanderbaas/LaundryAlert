@@ -35,7 +35,7 @@ public class LaundryReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d("LaundryReceiver", "Running");
+        Log.d("Laundry", "Running");
         // This method is called when the BroadcastReceiver is receiving
         // an Intent broadcast.
         if (intent.getAction() != null && intent.getAction() == "nl.implode.laundryalert.ACTION_DISMISS") {
@@ -54,7 +54,7 @@ public class LaundryReceiver extends BroadcastReceiver {
 
     public void dismissAlert(Context context, Integer messageId, Long timestampStart) {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-        String handlerName = sharedPref.getString("handler_name", "");
+        String handlerName = sharedPref.getString("handler_name", context.getString(R.string.pref_default_handler_name));
         postHandler(timestampStart, handlerName);
 
         //remove notification
