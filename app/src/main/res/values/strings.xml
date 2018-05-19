@@ -52,4 +52,6 @@
 
     <!-- Main activity -->
     <string name="title_activity_main">MainActivity</string>
+    <string name="active">active</string>
+    <string name="inactive">inactive</string>
 </resources>

@@ -16,9 +16,14 @@ import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.RunnableScheduledFuture;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -49,7 +54,17 @@ public class MainActivity extends AppCompatActivity {
         // If the alarm has been set, cancel it.
         if (manager!= null) {
             manager.cancel(alarmIntent);
+            alarmIntent.cancel();
         }
+    }
+
+    public boolean isRunning() {
+        AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, PendingIntent.FLAG_NO_CREATE);
+
+        return alarmIntent != null;
     }
 
     private ServiceListener serviceListener = new ServiceListener(){
@@ -73,9 +88,27 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        final Context context = getApplicationContext();
+
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        new Timer().scheduleAtFixedRate(new TimerTask(){
+            @Override
+            public void run(){
+                runOnUiThread(new Runnable(){
+                    @Override
+                    public void run(){
+                        String title = context.getString(R.string.app_name);
+                        String active = context.getString(R.string.active);
+                        String inactive = context.getString(R.string.inactive);
+                        title += isRunning() ? " (" + active + ")" : " (" + inactive + ")";
+                        toolbar.setTitle(title);
+                    }
+                });
+            }
+        },0,5000);
 
         Button startService = (Button) findViewById(R.id.startService);
-        final Context context = getApplicationContext();
         startService.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
