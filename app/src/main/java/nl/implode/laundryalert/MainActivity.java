@@ -3,10 +3,12 @@ package nl.implode.laundryalert;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
 import javax.jmdns.ServiceEvent;
+import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
 
 import android.os.Bundle;
@@ -14,6 +16,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 
 import android.support.v7.widget.Toolbar;
@@ -28,6 +31,8 @@ import java.util.concurrent.RunnableScheduledFuture;
 
 public class MainActivity extends AppCompatActivity {
     private PendingIntent pendingIntent;
+    Boolean foundServices = false;
+    Boolean showedNoServiceAlert = false;
 
     public void start() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
@@ -80,7 +85,45 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void serviceResolved(ServiceEvent event) {
-            Log.d("Laundry", "Service resolved: " + event.getInfo());
+            final String name = event.getName();
+            final String endPoint = event.getInfo().getPropertyString("endpoint");
+            final String message1 = getApplicationContext().getString(R.string.found_laundry_service);
+            final String message2 = getApplicationContext().getString(R.string.connect_to_service);
+            final String no_services = getApplicationContext().getString(R.string.no_services);
+            final String yes = getApplicationContext().getString(R.string.yes);
+            final String no = getApplicationContext().getString(R.string.no);
+            final String ok = getApplicationContext().getString(R.string.ok);
+            final SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+
+            final String currentEndpoint = sharedPref.getString("server_address", "");
+            Log.d("Laundry", endPoint + " / " + currentEndpoint);
+            if (name.equals("laundryApi") && !endPoint.equals(currentEndpoint)) {
+                foundServices = true;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                        alertDialog.setTitle(message1);
+                        alertDialog.setMessage(message2 + "\n\n" + endPoint);
+                        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, yes,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        SharedPreferences.Editor editor = sharedPref.edit();
+                                        editor.putString("server_address",endPoint);
+                                        editor.apply();
+                                        dialog.dismiss();
+                                    }
+                                });
+                        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, no,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                        alertDialog.show();
+                    }
+                });
+            }
         }
     };
 
@@ -138,7 +181,27 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d("Laundry", "start discovery");
+                foundServices = false;
+                showedNoServiceAlert = false;
                 ServiceBrowser serviceBrowser = new ServiceBrowser(context, serviceListener);
+                /*if (!foundServices && !showedNoServiceAlert) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        showedNoServiceAlert = true;
+                        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                        alertDialog.setTitle(no_services);
+                        //alertDialog.setMessage(message2);
+                        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, ok,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                        alertDialog.show();
+                    }
+                    });
+                }*/
             }
         });
     }

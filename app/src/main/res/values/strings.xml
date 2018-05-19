@@ -54,4 +54,10 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="active">active</string>
     <string name="inactive">inactive</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="ok">OK</string>
+    <string name="found_laundry_service">Found a laundry service on this network</string>
+    <string name="no_services">No (new) laundry services found on this network</string>
+    <string name="connect_to_service">Would you like to connect to this service?</string>
 </resources>
