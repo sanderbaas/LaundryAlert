@@ -68,7 +68,8 @@ public class MainActivity extends AppCompatActivity {
         cancelIntent.setAction("cancel");
         PendingIntent cancelAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, cancelIntent, 0);
 
-        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime, nagInterval, cancelAlarmIntent);
+        // set the nag alarm a half minute out of the way of the regular one
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime + 30000L, nagInterval, cancelAlarmIntent);
 
 
     }
