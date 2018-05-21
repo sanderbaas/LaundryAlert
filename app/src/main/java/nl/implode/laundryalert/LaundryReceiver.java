@@ -1,24 +1,30 @@
 package nl.implode.laundryalert;
 
+import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.util.Date;
+import java.util.Timer;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -32,13 +38,22 @@ public class LaundryReceiver extends BroadcastReceiver {
     public static final String CHANNEL_ID = "nl.implode.laundryalert";
     public static final String CHANNEL_NAME = "Laundry Alert Channel";
     public static final String CHANNEL_DESCRIPTION = "Keep in touch with the laundry machine.";
+    public String serverAddress;
+    public String handlerName;
+    public String notificationsRingtone;
+    public Long nagInterval;
+    public Long syncInterval;
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        final SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        serverAddress = sharedPref.getString("server_address", "http://localhost:8124/");
+        handlerName = sharedPref.getString("handler_name", context.getString(R.string.pref_default_handler_name));
+        notificationsRingtone = sharedPref.getString("notifications_ringtone", "");
+
         Log.d("Laundry", "Running");
-        // This method is called when the BroadcastReceiver is receiving
-        // an Intent broadcast.
-        if (intent.getAction() != null && intent.getAction() == "nl.implode.laundryalert.ACTION_DISMISS") {
+
+        if (intent.getAction() != null && intent.getAction().equals("nl.implode.laundryalert.ACTION_DISMISS")) {
             Long timestampStart = null;
             Integer messageId = null;
             Bundle bundle = intent.getExtras();
@@ -48,13 +63,16 @@ public class LaundryReceiver extends BroadcastReceiver {
             return;
         }
 
+        if (intent.getAction() != null && intent.getAction().equals("cancel")) {
+            checkAndAlert(context, true);
+            return;
+        }
+
         // if the intent action is not dismiss
         checkAndAlert(context);
     }
 
     public void dismissAlert(Context context, Integer messageId, Long timestampStart) {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-        String handlerName = sharedPref.getString("handler_name", context.getString(R.string.pref_default_handler_name));
         postHandler(timestampStart, handlerName);
 
         //remove notification
@@ -63,6 +81,10 @@ public class LaundryReceiver extends BroadcastReceiver {
     }
 
     public void checkAndAlert(Context context) {
+        checkAndAlert(context, false);
+    }
+
+    public void checkAndAlert(Context context, Boolean forceSound) {
         String title = context.getString(R.string.note_laundry_done);
 
         JSONObject laundryStatus = getLaundryStatus();
@@ -91,7 +113,7 @@ public class LaundryReceiver extends BroadcastReceiver {
         }
 
         if (done && !handled) {
-            alertMessage(context, messageId, timestampStart, timestampDone, title);
+            alertMessage(context, messageId, timestampStart, timestampDone, title, forceSound);
         }
     }
 
@@ -101,7 +123,7 @@ public class LaundryReceiver extends BroadcastReceiver {
 
         OkHttpClient client = new OkHttpClient();
         MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-        String url = "http://kelder.implode.nl:8124/handle/" + timestampStart.toString();
+        String url = serverAddress + "handle/" + timestampStart.toString();
         String json = "{\"handler\": \"" + handler + "\"}";
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
@@ -121,8 +143,9 @@ public class LaundryReceiver extends BroadcastReceiver {
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
 
+
         OkHttpClient client = new OkHttpClient();
-        String url = "http://kelder.implode.nl:8124/status";
+        String url = serverAddress + "status";
         Request request = new Request.Builder()
                 .url(url)
                 .build();
@@ -136,7 +159,7 @@ public class LaundryReceiver extends BroadcastReceiver {
         }
     }
 
-    public void alertMessage(Context context, Integer messageId, Long timestampStart, Long timestampDone, String title) {
+    public void alertMessage(Context context, Integer messageId, Long timestampStart, Long timestampDone, String title, Boolean forceSound) {
         createNotificationChannel(context);
         Intent dismissIntent = new Intent(context, LaundryReceiver.class);
         dismissIntent.setAction("nl.implode.laundryalert.ACTION_DISMISS");
@@ -152,13 +175,21 @@ public class LaundryReceiver extends BroadcastReceiver {
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setWhen(timestampDone)
-                .setSmallIcon(R.drawable.wash)
+                .setSmallIcon(R.drawable.baseline_local_laundry_service_white_48)
                 .setContentTitle(title)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .addAction(dismissAction);
+
+        if (!forceSound) {
+            mBuilder.setOnlyAlertOnce(true);
+        }
+        if (!notificationsRingtone.isEmpty()) {
+            mBuilder.setSound(Uri.parse(notificationsRingtone));
+        }
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
         Integer notificationId = messageId;
-        notificationManager.notify(notificationId, mBuilder.build());
+        Notification notification = mBuilder.build();
+        notificationManager.notify(notificationId, notification);
     }
 
     private void createNotificationChannel(Context context) {

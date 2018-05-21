@@ -34,11 +34,21 @@ public class MainActivity extends AppCompatActivity {
     Boolean foundServices = false;
     Boolean showedNoServiceAlert = false;
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ServiceBrowser serviceBrowser = new ServiceBrowser(getApplicationContext(), serviceListener);
+    }
+
     public void start() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
         AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
+        Long currentTime = System.currentTimeMillis();
+
         Long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+        Long nagInterval = AlarmManager.INTERVAL_HALF_HOUR;
+
         String syncInterval = sharedPref.getString("sync_frequency", "");
         if (!syncInterval.isEmpty()) {
             interval = Long.parseLong(syncInterval) * 60000L;
@@ -47,7 +57,20 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
 
-        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), interval, alarmIntent);
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime, interval, alarmIntent);
+
+        String nagFrequency = sharedPref.getString("nag_frequency", "");
+        if (!nagFrequency.isEmpty()) {
+            nagInterval = Long.parseLong(nagFrequency) * 60000L;
+        }
+
+        Intent cancelIntent = new Intent(MainActivity.this, LaundryReceiver.class);
+        cancelIntent.setAction("cancel");
+        PendingIntent cancelAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, cancelIntent, 0);
+
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime, nagInterval, cancelAlarmIntent);
+
+
     }
 
     public void stop() {
@@ -56,10 +79,16 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
 
+        Intent cancelIntent = new Intent(MainActivity.this, LaundryReceiver.class);
+        cancelIntent.setAction("cancel");
+        PendingIntent cancelAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, cancelIntent, 0);
+
         // If the alarm has been set, cancel it.
         if (manager!= null) {
             manager.cancel(alarmIntent);
+            manager.cancel(cancelAlarmIntent);
             alarmIntent.cancel();
+            cancelAlarmIntent.cancel();
         }
     }
 
@@ -96,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
             final SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
 
             final String currentEndpoint = sharedPref.getString("server_address", "");
-            Log.d("Laundry", endPoint + " / " + currentEndpoint);
+
             if (name.equals("laundryApi") && !endPoint.equals(currentEndpoint)) {
                 foundServices = true;
                 runOnUiThread(new Runnable() {
@@ -173,35 +202,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
                 MainActivity.this.startActivity(settingsIntent);
-            }
-        });
-
-        Button discover = (Button) findViewById(R.id.discover);
-        discover.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                Log.d("Laundry", "start discovery");
-                foundServices = false;
-                showedNoServiceAlert = false;
-                ServiceBrowser serviceBrowser = new ServiceBrowser(context, serviceListener);
-                /*if (!foundServices && !showedNoServiceAlert) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        showedNoServiceAlert = true;
-                        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-                        alertDialog.setTitle(no_services);
-                        //alertDialog.setMessage(message2);
-                        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, ok,
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-                        alertDialog.show();
-                    }
-                    });
-                }*/
             }
         });
     }

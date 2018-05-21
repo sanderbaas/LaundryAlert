@@ -17,6 +17,8 @@ public class AutoStart extends BroadcastReceiver {
             Intent alarmIntent = new Intent(context, LaundryReceiver.class);
             PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, alarmIntent, 0);
 
+            Long currentTime = System.currentTimeMillis();
+
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
 
             Long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
@@ -26,7 +28,7 @@ public class AutoStart extends BroadcastReceiver {
             }
 
             AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), interval, pendingIntent);
+            manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime, interval, pendingIntent);
 
             Log.d("Laundry", "Alarm set from autostart");
             //Toast.makeText(context, "Alarm Set", Toast.LENGTH_SHORT).show();
