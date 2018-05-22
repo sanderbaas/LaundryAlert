@@ -47,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
         Long currentTime = System.currentTimeMillis();
 
         Long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
-        Long nagInterval = AlarmManager.INTERVAL_HALF_HOUR;
 
         String syncInterval = sharedPref.getString("sync_frequency", "");
         if (!syncInterval.isEmpty()) {
@@ -58,20 +57,6 @@ public class MainActivity extends AppCompatActivity {
         PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
 
         manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime, interval, alarmIntent);
-
-        String nagFrequency = sharedPref.getString("nag_frequency", "");
-        if (!nagFrequency.isEmpty()) {
-            nagInterval = Long.parseLong(nagFrequency) * 60000L;
-        }
-
-        Intent cancelIntent = new Intent(MainActivity.this, LaundryReceiver.class);
-        cancelIntent.setAction("cancel");
-        PendingIntent cancelAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, cancelIntent, 0);
-
-        // set the nag alarm a half minute out of the way of the regular one
-        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime + 30000L, nagInterval, cancelAlarmIntent);
-
-
     }
 
     public void stop() {
@@ -80,16 +65,16 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
 
-        Intent cancelIntent = new Intent(MainActivity.this, LaundryReceiver.class);
-        cancelIntent.setAction("cancel");
-        PendingIntent cancelAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, cancelIntent, 0);
+        Intent nagIntent = new Intent(MainActivity.this, LaundryReceiver.class);
+        nagIntent.setAction("nl.implode.laundryalert.ACTION_NAG");
+        PendingIntent nagAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, nagIntent,PendingIntent.FLAG_NO_CREATE);
 
         // If the alarm has been set, cancel it.
         if (manager!= null) {
             manager.cancel(alarmIntent);
-            manager.cancel(cancelAlarmIntent);
             alarmIntent.cancel();
-            cancelAlarmIntent.cancel();
+            manager.cancel(nagAlarmIntent);
+            nagAlarmIntent.cancel();
         }
     }
 
@@ -98,8 +83,11 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(MainActivity.this, LaundryReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, PendingIntent.FLAG_NO_CREATE);
+        Intent nagIntent = new Intent(MainActivity.this, LaundryReceiver.class);
+        nagIntent.setAction("nl.implode.laundryalert.ACTION_NAG");
+        PendingIntent nagAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, nagIntent,PendingIntent.FLAG_NO_CREATE);
 
-        return alarmIntent != null;
+        return alarmIntent != null || nagAlarmIntent != null;
     }
 
     private ServiceListener serviceListener = new ServiceListener(){

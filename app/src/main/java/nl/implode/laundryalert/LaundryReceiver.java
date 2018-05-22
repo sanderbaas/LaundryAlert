@@ -41,8 +41,6 @@ public class LaundryReceiver extends BroadcastReceiver {
     public String serverAddress;
     public String handlerName;
     public String notificationsRingtone;
-    public Long nagInterval;
-    public Long syncInterval;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -54,37 +52,40 @@ public class LaundryReceiver extends BroadcastReceiver {
         Log.d("Laundry", "Running");
 
         if (intent.getAction() != null && intent.getAction().equals("nl.implode.laundryalert.ACTION_DISMISS")) {
+            Log.d("Laundry", "DISMISS");
             Long timestampStart = null;
             Integer messageId = null;
             Bundle bundle = intent.getExtras();
             timestampStart = bundle.getLong("timestampStart");
             messageId = bundle.getInt("messageId");
-            dismissAlert(context, messageId, timestampStart);
+            postHandler(timestampStart, handlerName);
+            cancelNotification(context, messageId);
+            changeInterval(context, "sync_frequency");
             return;
         }
 
-        if (intent.getAction() != null && intent.getAction().equals("cancel")) {
-            checkAndAlert(context, true);
+        if (intent.getAction() != null && intent.getAction().equals("nl.implode.laundryalert.ACTION_NAG")) {
+            Log.d("Laundry", "NAG");
+            checkAndAlert(context);
             return;
         }
 
-        // if the intent action is not dismiss
-        checkAndAlert(context);
+        Log.d("Laundry", "DEFAULT");
+        // if the intent action is not dismiss and not nag
+        Boolean alerted = checkAndAlert(context);
+        if (alerted) {
+            changeInterval(context, "nag_frequency");
+        }
     }
 
-    public void dismissAlert(Context context, Integer messageId, Long timestampStart) {
-        postHandler(timestampStart, handlerName);
-
+    public void cancelNotification(Context context, Integer messageId) {
+        Log.d("Laundry", "cancelNotification");
         //remove notification
         NotificationManager notificationManager= (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(messageId);
     }
 
-    public void checkAndAlert(Context context) {
-        checkAndAlert(context, false);
-    }
-
-    public void checkAndAlert(Context context, Boolean forceSound) {
+    public Boolean checkAndAlert(Context context) {
         String title = context.getString(R.string.note_laundry_done);
 
         JSONObject laundryStatus = getLaundryStatus();
@@ -109,12 +110,48 @@ public class LaundryReceiver extends BroadcastReceiver {
             }
 
         } catch (Exception e) {
-            return;
+            return false;
         }
 
         if (done && !handled) {
-            alertMessage(context, messageId, timestampStart, timestampDone, title, forceSound);
+            alertMessage(context, messageId, timestampStart, timestampDone, title);
+            return true;
         }
+        return false;
+    }
+
+    public void changeInterval(Context context, String prefName) {
+        Log.d("Laundry", "change interval " + prefName);
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        Long currentTime = System.currentTimeMillis();
+        Long interval = AlarmManager.INTERVAL_HALF_HOUR;
+
+        String syncInterval = sharedPref.getString(prefName, "");
+        if (!syncInterval.isEmpty()) {
+            interval = Long.parseLong(syncInterval) * 60000L;
+        }
+
+        Intent oldIntent = new Intent(context, LaundryReceiver.class);
+        if (prefName.equals("sync_frequency")) {
+            oldIntent.setAction("nl.implode.laundryalert.ACTION_NAG");
+        }
+        PendingIntent oldAlarmIntent = PendingIntent.getBroadcast(context, 0, oldIntent, 0);
+
+        //cancel current intent
+        if (manager!= null) {
+            manager.cancel(oldAlarmIntent);
+            oldAlarmIntent.cancel();
+        }
+
+        Log.d("Laundry", interval.toString());
+        Intent newIntent = new Intent(context, LaundryReceiver.class);
+        if (prefName.equals("nag_frequency")) {
+            newIntent.setAction("nl.implode.laundryalert.ACTION_NAG");
+        }
+        PendingIntent newAlarmIntent = PendingIntent.getBroadcast(context, 0, newIntent, 0);
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime + interval, interval, newAlarmIntent);
     }
 
     public void postHandler(Long timestampStart, String handler) {
@@ -159,7 +196,7 @@ public class LaundryReceiver extends BroadcastReceiver {
         }
     }
 
-    public void alertMessage(Context context, Integer messageId, Long timestampStart, Long timestampDone, String title, Boolean forceSound) {
+    public void alertMessage(Context context, Integer messageId, Long timestampStart, Long timestampDone, String title) {
         createNotificationChannel(context);
         Intent dismissIntent = new Intent(context, LaundryReceiver.class);
         dismissIntent.setAction("nl.implode.laundryalert.ACTION_DISMISS");
@@ -178,11 +215,9 @@ public class LaundryReceiver extends BroadcastReceiver {
                 .setSmallIcon(R.drawable.baseline_local_laundry_service_white_48)
                 .setContentTitle(title)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                //.setOnlyAlertOnce(true)
                 .addAction(dismissAction);
 
-        if (!forceSound) {
-            mBuilder.setOnlyAlertOnce(true);
-        }
         if (!notificationsRingtone.isEmpty()) {
             mBuilder.setSound(Uri.parse(notificationsRingtone));
         }
