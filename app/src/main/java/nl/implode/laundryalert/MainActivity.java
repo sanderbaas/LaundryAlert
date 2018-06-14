@@ -70,9 +70,12 @@ public class MainActivity extends AppCompatActivity {
         PendingIntent nagAlarmIntent = PendingIntent.getBroadcast(MainActivity.this, 0, nagIntent,PendingIntent.FLAG_NO_CREATE);
 
         // If the alarm has been set, cancel it.
-        if (manager!= null) {
+        if (manager!= null && alarmIntent != null) {
             manager.cancel(alarmIntent);
             alarmIntent.cancel();
+        }
+
+        if (manager != null && nagAlarmIntent != null) {
             manager.cancel(nagAlarmIntent);
             nagAlarmIntent.cancel();
         }
