@@ -150,7 +150,7 @@ public class LaundryReceiver extends BroadcastReceiver {
         if (prefName.equals("nag_frequency")) {
             newIntent.setAction("nl.implode.laundryalert.ACTION_NAG");
         }
-        PendingIntent newAlarmIntent = PendingIntent.getBroadcast(context, 0, newIntent, 0);
+        PendingIntent newAlarmIntent = PendingIntent.getBroadcast(context, 0, newIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, currentTime + interval, interval, newAlarmIntent);
     }
 
