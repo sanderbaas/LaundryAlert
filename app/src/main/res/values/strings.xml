@@ -3,6 +3,8 @@
     <string name="dismiss">Dismiss</string>
     <string name="snooze">Snooze</string>
     <string name="note_laundry_done">Laundry is done</string>
+    <string name="notification_channel_name">Status updates</string>
+    <string name="notification_channel_description">Receive a message when the laundry is done</string>
 
     <!-- Strings related to Settings -->
 

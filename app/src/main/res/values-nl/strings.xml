@@ -3,6 +3,8 @@
     <string name="dismiss">Afhandelen</string>
     <string name="snooze">Snooze</string>
     <string name="note_laundry_done">De was is klaar</string>
+    <string name="notification_channel_name">Status-updates</string>
+    <string name="notification_channel_description">Ontvang een bericht als de was klaar is</string>
 
     <!-- Strings related to Settings -->
 

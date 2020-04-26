@@ -7,25 +7,16 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
-import android.support.v7.app.AlertDialog;
-import android.util.Log;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
-
-import java.util.Date;
-import java.util.Timer;
-
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -36,23 +27,18 @@ import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 
 public class LaundryReceiver extends BroadcastReceiver {
     public static final String CHANNEL_ID = "nl.implode.laundryalert";
-    public static final String CHANNEL_NAME = "Laundry Alert Channel";
-    public static final String CHANNEL_DESCRIPTION = "Keep in touch with the laundry machine.";
+    //public static final String CHANNEL_NAME = "Laundry Alert Channel";
+    //public static final String CHANNEL_DESCRIPTION = "Keep in touch with the laundry machine.";
     public String serverAddress;
     public String handlerName;
-    public String notificationsRingtone;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         final SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         serverAddress = sharedPref.getString("server_address", "http://localhost:8124/");
         handlerName = sharedPref.getString("handler_name", context.getString(R.string.pref_default_handler_name));
-        notificationsRingtone = sharedPref.getString("notifications_ringtone", "");
-
-        Log.d("Laundry", "Running");
 
         if (intent.getAction() != null && intent.getAction().equals("nl.implode.laundryalert.ACTION_DISMISS")) {
-            Log.d("Laundry", "DISMISS");
             Long timestampStart = null;
             Integer messageId = null;
             Bundle bundle = intent.getExtras();
@@ -65,12 +51,10 @@ public class LaundryReceiver extends BroadcastReceiver {
         }
 
         if (intent.getAction() != null && intent.getAction().equals("nl.implode.laundryalert.ACTION_NAG")) {
-            Log.d("Laundry", "NAG");
             checkAndAlert(context);
             return;
         }
 
-        Log.d("Laundry", "DEFAULT");
         // if the intent action is not dismiss and not nag
         Boolean alerted = checkAndAlert(context);
         if (alerted) {
@@ -79,7 +63,6 @@ public class LaundryReceiver extends BroadcastReceiver {
     }
 
     public void cancelNotification(Context context, Integer messageId) {
-        Log.d("Laundry", "cancelNotification");
         //remove notification
         NotificationManager notificationManager= (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(messageId);
@@ -121,7 +104,6 @@ public class LaundryReceiver extends BroadcastReceiver {
     }
 
     public void changeInterval(Context context, String prefName) {
-        Log.d("Laundry", "change interval " + prefName);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
@@ -145,7 +127,6 @@ public class LaundryReceiver extends BroadcastReceiver {
             oldAlarmIntent.cancel();
         }
 
-        Log.d("Laundry", interval.toString());
         Intent newIntent = new Intent(context, LaundryReceiver.class);
         if (prefName.equals("nag_frequency")) {
             newIntent.setAction("nl.implode.laundryalert.ACTION_NAG");
@@ -205,6 +186,7 @@ public class LaundryReceiver extends BroadcastReceiver {
 
         PendingIntent dismissPendingIntent =
                 PendingIntent.getBroadcast(context, 0, dismissIntent, FLAG_UPDATE_CURRENT);
+
         NotificationCompat.Action dismissAction = new NotificationCompat.Action.Builder(
                 android.R.drawable.btn_default,
                 context.getString(R.string.dismiss),
@@ -214,13 +196,8 @@ public class LaundryReceiver extends BroadcastReceiver {
                 .setWhen(timestampDone)
                 .setSmallIcon(R.drawable.baseline_local_laundry_service_white_48)
                 .setContentTitle(title)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                //.setOnlyAlertOnce(true)
                 .addAction(dismissAction);
 
-        if (!notificationsRingtone.isEmpty()) {
-            mBuilder.setSound(Uri.parse(notificationsRingtone));
-        }
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
         Integer notificationId = messageId;
         Notification notification = mBuilder.build();
@@ -228,20 +205,14 @@ public class LaundryReceiver extends BroadcastReceiver {
     }
 
     private void createNotificationChannel(Context context) {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = CHANNEL_NAME;
-            String description = CHANNEL_DESCRIPTION;
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
+        CharSequence name = context.getString(R.string.notification_channel_name);
+        String description = context.getString(R.string.notification_channel_description);
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+        channel.setDescription(description);
 
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
     }
 
 }

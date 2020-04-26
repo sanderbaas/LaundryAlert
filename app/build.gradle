@@ -4,10 +4,10 @@ android {
     compileSdkVersion 26
     defaultConfig {
         applicationId "nl.implode.laundryalert"
-        minSdkVersion 15
+        minSdkVersion 26
         targetSdkVersion 26
-        versionCode 3
-        versionName "2.0"
+        versionCode 4
+        versionName "3.0"
         setProperty("archivesBaseName", "laundryalert-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -22,10 +22,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "com.android.support:support-compat:26.0.0"
     implementation 'com.squareup.okhttp3:okhttp:3.10.0'
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support:support-v4:26.1.0'
-    implementation 'com.android.support:support-vector-drawable:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
     implementation 'com.android.support:design:26.1.0'
     implementation 'org.jmdns:jmdns:3.5.1'
