@@ -6,8 +6,8 @@ android {
         applicationId "nl.implode.laundryalert"
         minSdkVersion 26
         targetSdkVersion 26
-        versionCode 4
-        versionName "3.0"
+        versionCode 5
+        versionName "3.1.0"
         setProperty("archivesBaseName", "laundryalert-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
