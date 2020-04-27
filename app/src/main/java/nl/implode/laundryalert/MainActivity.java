@@ -15,10 +15,13 @@ import android.preference.PreferenceManager;
 
 import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.Button;
 
 import java.util.Timer;
@@ -83,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         final Context context = getApplicationContext();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 
@@ -96,6 +100,33 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         }
+
+        final WebView browser = (WebView) findViewById(R.id.webView);
+        browser.getSettings().setJavaScriptEnabled(true);
+        String serverAddress = sharedPref.getString("server_address", "");
+        if (!serverAddress.isEmpty()) {
+            browser.loadUrl(serverAddress);
+        }
+
+        final SwipeRefreshLayout swiperefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
+        swiperefresh.setOnRefreshListener(
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        Log.d("Laundry", "onRefresh called from SwipeRefreshLayout");
+                        browser.reload();
+                        swiperefresh.setRefreshing(false);
+                    }
+                }
+        );
+        /*Button refreshWebview = (Button) findViewById(R.id.refreshWebview);
+        refreshWebview.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                browser.reload();
+            }
+        });*/
+
 
         new Timer().scheduleAtFixedRate(new TimerTask(){
             @Override
